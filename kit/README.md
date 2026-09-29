@@ -1,39 +1,36 @@
 # Kit VM
 
-Objectif : sur une machine entreprise, reprendre le travail avec le code, les données utiles, et deux environnements Python.
+Sur la VM : reprendre le travail avec le code, les données utiles, et deux environnements Python.
 
-## Contenu attendu après `pack.sh`
+Sans accès réseau à la VM : on prépare des dossiers ici, on les met sur une **clé USB** (ou disque), on les recolle sur la VM.
 
-```
-alignement_kit/
-├── KIT.md
-├── MANIFEST_DONNEES.txt
-└── Alignement-semantique/
-    ├── dictionnaire/data/raw/…
-    ├── dictionnaire/data/interim/…     # démarrage rapide
-    ├── dictionnaire/assets/            # kiri_dicts.pkl, etc.
-    ├── snobert/data/competition_data/…
-    ├── snobert/data/preprocess_data/…
-    ├── snobert/data/parhaf_infectiology/…
-    ├── parhaf/csv/…
-    ├── kit/
-    └── …
-```
+Deux paquets :
 
-## Sur la machine source (ici)
+1. **Code + données déjà rangées** → `pack.sh`  
+2. **Arbre `snomedEL` d’origine** (chemins du mémoire) → `pack_snomedel.sh`
+
+## 1) Code (Alignement-semantique)
 
 ```bash
 cd /Data/AMA/Alignement-semantique
 bash kit/pack.sh /Data/AMA/tmp/alignement_kit
-# avec poids NER + SapBERT (~6 Go de plus) :
-# bash kit/pack.sh /Data/AMA/tmp/alignement_kit --with-checkpoints
+# option : bash kit/pack.sh … --with-checkpoints
 ```
 
-Puis copier vers la VM :
+Mettre `/Data/AMA/tmp/alignement_kit` sur la clé USB.
+
+## 2) Données snomedEL (layout d’origine)
 
 ```bash
-rsync -avh --progress /Data/AMA/tmp/alignement_kit/ user@vm:/chemin/alignement_kit/
+cd /Data/AMA/Alignement-semantique
+bash kit/pack_snomedel.sh /Data/AMA/tmp/snomedEL_portable
+# avec poids NER + SapBERT :
+# bash kit/pack_snomedel.sh /Data/AMA/tmp/snomedEL_portable --with-weights
 ```
+
+Mettre `/Data/AMA/tmp/snomedEL_portable` sur la clé USB (dossier entier).
+
+Sur la VM, le coller par exemple en `/home/USER/snomedEL` (il doit contenir `SnoBERT/`, `demo_dict/`, …).
 
 ## Sur la VM
 
@@ -41,7 +38,9 @@ rsync -avh --progress /Data/AMA/tmp/alignement_kit/ user@vm:/chemin/alignement_k
 cd /chemin/alignement_kit/Alignement-semantique
 bash kit/setup_envs.sh          # ou : bash kit/setup_envs.sh --cpu-only
 bash kit/verify.sh
-export SNOMED_EL_HOME="$(pwd)"
+
+# Pointer vers le snomedEL collé depuis la clé :
+export SNOMED_EL_HOME=/home/USER/snomedEL
 ```
 
 - Dictionnaire / interface dict : `source .venv_dict/bin/activate`
